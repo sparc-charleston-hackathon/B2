@@ -1,28 +1,75 @@
 package org.noip.b2;
 
-import android.support.v4.app.FragmentActivity;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.IntentSender;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationManager;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.util.Log;
+import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity {
+public class MapsActivity extends FragmentActivity implements
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener,
+        LocationListener {
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
+    private GoogleApiClient mGoogleApiClient;
+    public static final String TAG = FragmentActivity.class.getSimpleName();
+    private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+    private LocationRequest mLocationRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
+
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+
+        // Create the LocationRequest object
+        mLocationRequest = LocationRequest.create()
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+                .setInterval(2 * 1000)        // 2 seconds, in milliseconds
+                .setFastestInterval(1 * 500); // 1/2 second, in milliseconds
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mGoogleApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+            mGoogleApiClient.disconnect();
+        }
     }
 
     /**
@@ -63,9 +110,71 @@ public class MapsActivity extends FragmentActivity {
 
         mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
 
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("All Zeroes"));
+    }
 
-        mMap.addMarker(new MarkerOptions().position(new LatLng(32.901231, -79.916614)).title("Sparc")); // Sparc Front Driveway 32.901231, -79.916614
 
+    @Override
+    public void onConnected(Bundle bundle) {
+        Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        if (location == null) {
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        }
+        else {
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+            //handleNewLocation(location);
+        };
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        if (connectionResult.hasResolution()) {
+            try {
+                // Start an Activity that tries to resolve the error
+                connectionResult.startResolutionForResult(this, CONNECTION_FAILURE_RESOLUTION_REQUEST);
+            } catch (IntentSender.SendIntentException e) {
+                e.printStackTrace();
+            }
+        } else {
+            Log.i(TAG, "Location services connection failed with code " + connectionResult.getErrorCode());
+        }
+    }
+
+
+    private void handleNewLocation(Location location) {
+        Log.d(TAG, location.toString());
+        LatLng latLng = new LatLng(location.getLatitude(),location.getLongitude());
+        MarkerOptions options = new MarkerOptions().position(latLng).title("Batman");
+        mMap.addMarker(options);
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+
+
+        try {
+            WifiManager WAPs = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+            WAPs.setWifiEnabled(true);
+
+            //foreach loop in Java/Android
+            //while (true) //for (int a = 0; a < 1000; a++) {
+            for (ScanResult ap : WAPs.getScanResults()) {
+                if (ap.SSID.contains("TheJoker")) {
+
+                    Toast.makeText(this, ap.level + " dBm", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+        catch(Exception e)
+        {
+        }
+
+    }
+
+
+    @Override
+    public void onLocationChanged(Location location) {
+        handleNewLocation(location);
     }
 }
