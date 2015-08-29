@@ -156,15 +156,17 @@ public class MapsActivity extends FragmentActivity implements
         try {
             WifiManager WAPs = (WifiManager) getSystemService(Context.WIFI_SERVICE);
             WAPs.setWifiEnabled(true);
+            boolean foundJoker = false;
 
-            //foreach loop in Java/Android
-            //while (true) //for (int a = 0; a < 1000; a++) {
             for (ScanResult ap : WAPs.getScanResults()) {
                 if (ap.SSID.contains("TheJoker")) {
-
+                    foundJoker = true;
                     Toast.makeText(this, ap.level + " dBm", Toast.LENGTH_SHORT).show();
+                    break;
                 }
             }
+            if(foundJoker) foundJoker = false;
+            else Toast.makeText(this, "No Signal", Toast.LENGTH_SHORT).show();
         }
         catch(Exception e)
         {
