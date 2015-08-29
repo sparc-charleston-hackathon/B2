@@ -61,6 +61,8 @@ public class MapsActivity extends FragmentActivity {
      */
     private void setUpMap() {
 
+        mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+
         mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("All Zeroes"));
 
         mMap.addMarker(new MarkerOptions().position(new LatLng(32.901231, -79.916614)).title("Sparc")); // Sparc Front Driveway 32.901231, -79.916614
