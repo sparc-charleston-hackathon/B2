@@ -159,9 +159,9 @@ public class MapsActivity extends FragmentActivity implements
             boolean foundJoker = false;
 
             for (ScanResult ap : WAPs.getScanResults()) {
-                if (ap.SSID.contains("TheJoker")) {
+                if (ap.SSID.contains("SPARC-Guest")) {
                     foundJoker = true;
-                    Toast.makeText(this, ap.level + " dBm", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, ap.level + " dBm MAC: " +ap.BSSID, Toast.LENGTH_SHORT).show();
                     break;
                 }
             }
